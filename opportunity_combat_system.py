@@ -49,6 +49,35 @@ class Character:
         self.temporary.initiative = self.attributes.agility
         for die in self.temporary.pool:
             self.temporary.initiative += die.value
+            
+    def update_status(self):
+        report = []
+        started_fallen = self.status.fallen
+        if self.status.fatally_injured == True:
+            trauma_increase = self.trauma_resist_check()
+            if trauma_increase >= 0:
+                if started_fallen == True:
+                    self.temporary.trauma += trauma_increase
+                    if self.temporary.trauma > 10 * self.attributes.physique:
+                        self.status.dead = True
+                        report.append('%s is dead' % self.name)
+                    else:
+                        report.append('%s\'s wounds are worsening' % self.name)
+                else:
+                    report.append('%s has fallen from their wounds' % self.name)
+                
+        return report
+            
+    def trauma_resist_check(self):
+        trauma_resist_check = \
+            self.attributes.physique + Die().value + Die().value
+        
+        condition_worsening = self.temporary.trauma - trauma_resist_check
+        if condition_worsening >= 0:
+            self.status.fallen = True
+  
+        return condition_worsening
+            
       
 class Die:
     def __init__(self, colour = None, value = None):
@@ -125,18 +154,18 @@ def attack(attacker, ATT, accuracy, target, DEF):
             target.armour.value - attacker.weapon.armour_penetration
         if armour_defence > 0:
             DEF += armour_defence
-            report.append('Attack hits armour')
+            report.append('%s\'s attack hits armour' % attacker.name)
         else:
-            report.append('Attack breaks through armour')
+            report.append('%s\'s attack breaks through armour' % attacker.name)
     else:
-        report.append('Attack strikes unarmoured area')
+        report.append('%s\'s attack strikes an unarmoured area' % attacker.name)
     
     if ATT > DEF:
         sustained_trauma = attacker.weapon.damage
         if ATT - DEF >= 3:
             if attacker.weapon.blunt == False:
                 target.status.fatally_injured = True
-                report.append('Fatal injury!')
+                report.append('%s has suffered a fatal injury' % target.name)
             sustained_trauma += 3
             
         target.temporary.trauma += sustained_trauma
@@ -151,17 +180,14 @@ def attack(attacker, ATT, accuracy, target, DEF):
         if sustained_trauma >= trauma_resist_max:
             target.status.dead = True
             report.append('Instant Kill!')
-        else:            
-            trauma_resist_check = \
-                target.attributes.physique + Die().value + Die().value
-                
-            if trauma_resist_check <= target.temporary.trauma:
-                target.status.fallen = True
-                report.append('Defender has fallen!')
+        else:
+            fallen = target.trauma_resist_check()            
+            if fallen >= 0:
+                report.append('%s has fallen' % target.name)
             else:
-                report.append('Defender is still standing')
+                report.append('%s is still standing' % target.name)
     else:
-        report.append('Attack does not cause injury')
+        report.append('%s\'s attack does not cause injury' % attacker.name)
         
     return report
 
@@ -169,7 +195,7 @@ if  __name__ =='__main__':
     Alice = Character(
         "Alice",
         Attributes(2,2,2),
-        Weapon(5,0,1, True),
+        Weapon(5,0,1, False),
         Armour(0,0),
         Temporary(3,0,0,0),
         Status(False, False, False, False))
@@ -230,10 +256,11 @@ if  __name__ =='__main__':
     ## To do
     # round
     print
-    while Claire.status.fallen == False:
-        AliceDice = Die().value
+    while (Claire.status.fallen == False) and (Claire.status.dead == False):
+        AliceDice = Die().value + Die().value
         ClaireDice = Die().value
-        print
         print "Alice ATT %d Clair DEF %d" %(AliceDice,ClaireDice)
         print attack(Alice, AliceDice, AliceDice, Claire, ClaireDice)
         print "Claire Trauma %d" %Claire.temporary.trauma
+        print
+        print Claire.update_status() 
