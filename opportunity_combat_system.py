@@ -66,8 +66,8 @@ class DiceSet:
                      Die("Maneuver")]
                      
     def roll(self):
-        for i in range(1,6):
-            self.Dice[i].roll()
+        for die in self.Dice:
+            die.roll()
 
 def determine_pick_order(combatants):
     """ Determines the order of dice picking during the Pick step of Seize 
@@ -92,7 +92,7 @@ def determine_pick_order(combatants):
         seen[skill] = 1
         skill_bands.append(skill)
     
-    # Work out the pick order
+    # Work out the pick order.
     pick_order = []
     for skill_band in skill_bands:
         for combatant in combatants:
@@ -172,6 +172,7 @@ if  __name__ =='__main__':
 
     determine_initiative_order(Combatants)
     for combatant in Combatants:
+        print combatant.name
         print combatant.temporary.initiative
         
     # violence:
