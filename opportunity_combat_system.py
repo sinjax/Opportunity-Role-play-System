@@ -119,17 +119,24 @@ def determine_initiative_order(combatants):
     combatants.sort(key = pick_key, reverse = True)
 
 def attack(attacker, ATT, accuracy, target, DEF):
+    report = []
     if accuracy <= target.armour.coverage:
         armour_defence = \
             target.armour.value - attacker.weapon.armour_penetration
         if armour_defence > 0:
             DEF += armour_defence
+            report.append('Attack hits armour')
+        else:
+            report.append('Attack breaks through armour')
+    else:
+        report.append('Attack strikes unarmoured area')
     
     if ATT > DEF:
         sustained_trauma = attacker.weapon.damage
         if ATT - DEF >= 3:
             if attacker.weapon.blunt == False:
                 target.status.fatally_injured = True
+                report.append('Fatal injury!')
             sustained_trauma += 3
             
         target.temporary.trauma += sustained_trauma
@@ -143,18 +150,26 @@ def attack(attacker, ATT, accuracy, target, DEF):
         trauma_resist_max = target.attributes.physique + 12
         if sustained_trauma >= trauma_resist_max:
             target.status.dead = True
+            report.append('Instant Kill!')
         else:            
             trauma_resist_check = \
                 target.attributes.physique + Die().value + Die().value
                 
             if trauma_resist_check <= target.temporary.trauma:
                 target.status.fallen = True
+                report.append('Defender has fallen!')
+            else:
+                report.append('Defender is still standing')
+    else:
+        report.append('Attack does not cause injury')
+        
+    return report
 
 if  __name__ =='__main__':
     Alice = Character(
         "Alice",
         Attributes(2,2,2),
-        Weapon(1,0,0, True),
+        Weapon(5,0,1, True),
         Armour(0,0),
         Temporary(3,0,0,0),
         Status(False, False, False, False))
@@ -171,7 +186,7 @@ if  __name__ =='__main__':
         "Claire",
         Attributes(2,2,2),
         Weapon(1,0,0, True),
-        Armour(1,3),
+        Armour(2,3),
         Temporary(2,0,0,0),
         Status(False, False, False, False))
     
@@ -218,6 +233,7 @@ if  __name__ =='__main__':
     while Claire.status.fallen == False:
         AliceDice = Die().value
         ClaireDice = Die().value
+        print
         print "Alice ATT %d Clair DEF %d" %(AliceDice,ClaireDice)
-        attack(Alice, AliceDice, AliceDice, Claire, ClaireDice)
+        print attack(Alice, AliceDice, AliceDice, Claire, ClaireDice)
         print "Claire Trauma %d" %Claire.temporary.trauma
