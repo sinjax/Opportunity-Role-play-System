@@ -9,10 +9,11 @@ class Attributes:
         self.intelligence = intelligence
     
 class Weapon:    
-    def __init__(self, damage, effective_range, armour_penetration):
+    def __init__(self, damage, effective_range, armour_penetration, blunt):
         self.damage = damage
         self.effective_range = effective_range
         self.armour_penetration = armour_penetration
+        self.blunt = blunt
     
 class Armour:
     def __init__(self, value, coverage):
@@ -33,6 +34,7 @@ class Status:
         self.aimed = aimed
         self.fallen = fallen
         self.fatally_injured = fatally_injured
+        self.dead = False
 
 class Character:
     def __init__(self, name, attributes, weapon, armour, temporary, status):
@@ -49,7 +51,7 @@ class Character:
             self.temporary.initiative += die.value
       
 class Die:
-    def __init__(self, colour, value = None):
+    def __init__(self, colour = None, value = None):
         if(value == None):
             self.roll()
             
@@ -116,11 +118,43 @@ def determine_initiative_order(combatants):
                           'attributes.intelligence')
     combatants.sort(key = pick_key, reverse = True)
 
+def attack(attacker, ATT, accuracy, target, DEF):
+    if accuracy <= target.armour.coverage:
+        armour_defence = \
+            target.armour.value - attacker.weapon.armour_penetration
+        if armour_defence > 0:
+            DEF += armour_defence
+    
+    if ATT > DEF:
+        sustained_trauma = attacker.weapon.damage
+        if ATT - DEF >= 3:
+            if attacker.weapon.blunt == False:
+                target.status.fatally_injured = True
+            sustained_trauma += 3
+            
+        target.temporary.trauma += sustained_trauma
+        
+        pain = (sustained_trauma + 1)/2
+        if target.temporary.position < pain:
+            target.temporary.position = 0
+        else:
+            target.temporary.position -= pain
+        
+        trauma_resist_max = target.attributes.physique + 12
+        if sustained_trauma >= trauma_resist_max:
+            target.status.dead = True
+        else:            
+            trauma_resist_check = \
+                target.attributes.physique + Die().value + Die().value
+                
+            if trauma_resist_check <= target.temporary.trauma:
+                target.status.fallen = True
+
 if  __name__ =='__main__':
     Alice = Character(
         "Alice",
         Attributes(2,2,2),
-        Weapon(1,0,0),
+        Weapon(1,0,0, True),
         Armour(0,0),
         Temporary(3,0,0,0),
         Status(False, False, False, False))
@@ -128,7 +162,7 @@ if  __name__ =='__main__':
     Bob = Character(
         "Bob",
         Attributes(2,2,2),
-        Weapon(1,0,0),
+        Weapon(1,0,0, True),
         Armour(0,0),
         Temporary(2,0,0,0),
         Status(False, False, False, False))
@@ -136,12 +170,14 @@ if  __name__ =='__main__':
     Claire = Character(
         "Claire",
         Attributes(2,2,2),
-        Weapon(1,0,0),
-        Armour(0,0),
+        Weapon(1,0,0, True),
+        Armour(1,3),
         Temporary(2,0,0,0),
         Status(False, False, False, False))
     
     Combatants = [Alice, Bob, Claire]
+    
+    # Combat Turn:
     
     # seizing opportunity:
     # roll
@@ -178,4 +214,10 @@ if  __name__ =='__main__':
     # violence:
     ## To do
     # round
-    ## To do
+    print
+    while Claire.status.fallen == False:
+        AliceDice = Die().value
+        ClaireDice = Die().value
+        print "Alice ATT %d Clair DEF %d" %(AliceDice,ClaireDice)
+        attack(Alice, AliceDice, AliceDice, Claire, ClaireDice)
+        print "Claire Trauma %d" %Claire.temporary.trauma
