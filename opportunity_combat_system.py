@@ -29,8 +29,8 @@ class Temporary:
         self.pool = []
 
 class Status:
-    def __init__(self, melee_lock, aimed, fallen, fatally_injured):
-        self.melee_lock = melee_lock
+    def __init__(self, melee_lock_group, aimed, fallen, fatally_injured):
+        self.melee_lock_group = melee_lock_group
         self.aimed = aimed
         self.fallen = fallen
         self.fatally_injured = fatally_injured
@@ -160,7 +160,15 @@ def attack(attacker, ATT, accuracy, target, DEF):
     else:
         report.append('%s\'s attack strikes an unarmoured area' % attacker.name)
     
+    if (attacker.status.melee_lock_group > 0):
+        ATT -= attacker.weapon.effective_range
+        report.append('%s\'s is encumbered by their weapon' % attacker.name)
+    elif attacker.status.aimed == True:
+        ATT += attacker.weapon.effective_range
+        report.append('%s\'s takes an aimed shot' % attacker.name)
+        
     if ATT > DEF:
+        target.status.aimed = False
         sustained_trauma = attacker.weapon.damage
         if ATT - DEF >= 3:
             if attacker.weapon.blunt == False:
