@@ -120,7 +120,7 @@ def determine_pick_order(combatants):
         skill = combatant.temporary.skill
         if skill in seen: 
             continue
-        seen[skill] = 1
+        seen[skill] = True
         skill_bands.append(skill)
     
     # Work out the pick order.
@@ -198,6 +198,66 @@ def attack(attacker, ATT, accuracy, target, DEF):
         report.append('%s\'s attack does not cause injury' % attacker.name)
         
     return report
+    
+class melee_lock:
+    def __init__(self):
+        self.melee_lock_groups = []
+        self.next_group_index = 1
+        
+    def lock(self, combatants): 
+
+        # get list of melee lock groups combatants are already in, and assign 
+        # new group to combatants not already melee locked
+        seen = {}
+        equivalences = []
+        allocated_new_group = False
+        for combatant in combatants:
+            group = combatant.melee_lock_group
+            if group in seen: 
+                continue
+            if group == 0:
+                group = next_group_index
+                allocated_new_group = True
+            seen[group] = True
+            equivalences.append(combatant.melee_lock_group)        
+            
+        if allocated_new_group == True:
+            next_group_index += 1
+        
+        # update melee lock groups
+        seen = {}
+        groups = []
+        for equivalence in equivalences:
+            self.melee_lock_groups[equivalence]
+            skill = combatant.temporary.skill
+            if skill in seen: 
+                continue
+            seen[skill] = True
+            skill_bands.append(skill)
+    
+        for equivalence in equivalences:
+            groups = self.melee_lock_groups[equivalence]
+            for equivalence in equivalences:
+                if equivalence in groups:
+                    continue
+                groups.append(equivalence)
+            
+    def check_lock(self, combatantA, combatantB):
+        locked = False
+        groupA = combatantA.melee_lock_group
+        groupB = combatantB.melee_lock_group
+        if groupA > 0 and groupB > 0:
+            if groupB in self.melee_lock_groups[groupA]:
+                locked = True
+        return locked
+
+class action:
+    def check_prerequisites(self, combatant):
+        pass
+        
+    def act(self, combatant):
+        pass
+    
 
 if  __name__ =='__main__':
     Alice = Character(
