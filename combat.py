@@ -217,7 +217,7 @@ def melee_lock(combatantA, combatantB):
     
 def break_melee_lock(combatant):
     report = []
-    opponent_names = [opponent.name + ',' \
+    opponent_names = [opponent.name + ', ' \
         for opponent in combatant.status.melee_lock]
     report.append('%s has broken from close combat with %s' % \
         (combatant.name, ''.join(opponent_names)))
