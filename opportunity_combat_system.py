@@ -29,8 +29,8 @@ class Temporary:
         self.pool = []
 
 class Status:
-    def __init__(self, melee_lock_group, aimed, fallen, fatally_injured):
-        self.melee_lock_group = melee_lock_group
+    def __init__(self, aimed, fallen, fatally_injured):
+        self.melee_lock = set()
         self.aimed = aimed
         self.fallen = fallen
         self.fatally_injured = fatally_injured
@@ -160,9 +160,9 @@ def attack(attacker, ATT, accuracy, target, DEF):
     else:
         report.append('%s\'s attack strikes an unarmoured area' % attacker.name)
     
-    if (attacker.status.melee_lock_group > 0):
+    if (len(attacker.status.melee_lock) > 0):
         ATT -= attacker.weapon.effective_range
-        report.append('%s\'s is encumbered by their weapon' % attacker.name)
+        report.append('%s is encumbered by their weapon' % attacker.name)
     elif attacker.status.aimed == True:
         ATT += attacker.weapon.effective_range
         report.append('%s\'s takes an aimed shot' % attacker.name)
@@ -199,65 +199,38 @@ def attack(attacker, ATT, accuracy, target, DEF):
         
     return report
     
-class melee_lock:
-    def __init__(self):
-        self.melee_lock_groups = []
-        self.next_group_index = 1
-        
-    def lock(self, combatants): 
-
-        # get list of melee lock groups combatants are already in, and assign 
-        # new group to combatants not already melee locked
-        seen = {}
-        equivalences = []
-        allocated_new_group = False
-        for combatant in combatants:
-            group = combatant.melee_lock_group
-            if group in seen: 
-                continue
-            if group == 0:
-                group = next_group_index
-                allocated_new_group = True
-            seen[group] = True
-            equivalences.append(combatant.melee_lock_group)        
-            
-        if allocated_new_group == True:
-            next_group_index += 1
-        
-        # update melee lock groups
-        seen = {}
-        groups = []
-        for equivalence in equivalences:
-            self.melee_lock_groups[equivalence]
-            skill = combatant.temporary.skill
-            if skill in seen: 
-                continue
-            seen[skill] = True
-            skill_bands.append(skill)
+def melee_lock(combatantA, combatantB):
+    combatantA.status.melee_lock.update(combatantB.status.melee_lock)
+    combatantB.status.melee_lock.update(combatantA.status.melee_lock)
+    combatantA.status.melee_lock.add(combatantB)    
+    combatantB.status.melee_lock.add(combatantA)
+    combatantA.status.melee_lock.discard(combatantA)
+    combatantB.status.melee_lock.discard(combatantB)
     
-        for equivalence in equivalences:
-            groups = self.melee_lock_groups[equivalence]
-            for equivalence in equivalences:
-                if equivalence in groups:
-                    continue
-                groups.append(equivalence)
-            
-    def check_lock(self, combatantA, combatantB):
-        locked = False
-        groupA = combatantA.melee_lock_group
-        groupB = combatantB.melee_lock_group
-        if groupA > 0 and groupB > 0:
-            if groupB in self.melee_lock_groups[groupA]:
-                locked = True
-        return locked
-
-class action:
-    def check_prerequisites(self, combatant):
-        pass
+    report = []
+    names = ([opponent.name + ', ' \
+        for opponent in combatantA.status.melee_lock])
+    names.extend('and ' + combatantA.name)
+    report.append('%s are now locked in close combat' % ''.join(names))
         
-    def act(self, combatant):
-        pass
+    return report
     
+def break_melee_lock(combatant):
+    report = []
+    opponent_names = [opponent.name + ',' \
+        for opponent in combatant.status.melee_lock]
+    report.append('%s has broken from close combat with %s' % \
+        (combatant.name, ''.join(opponent_names)))
+    
+    for opponent in combatant.status.melee_lock:
+        opponent.status.melee_lock.discard(combatant)
+ 
+    combatant.status.melee_lock.clear()
+    
+    return report
+    
+def check_melee_lock(combatantA, combatantB):
+    return combatantA in combatantB.status.melee_lock
 
 if  __name__ =='__main__':
     Alice = Character(
@@ -266,7 +239,7 @@ if  __name__ =='__main__':
         Weapon(5,0,1, False),
         Armour(0,0),
         Temporary(3,0,0,0),
-        Status(False, False, False, False))
+        Status(False, False, False))
         
     Bob = Character(
         "Bob",
@@ -274,7 +247,7 @@ if  __name__ =='__main__':
         Weapon(1,0,0, True),
         Armour(0,0),
         Temporary(2,0,0,0),
-        Status(False, False, False, False))
+        Status(False, False, False))
 
     Claire = Character(
         "Claire",
@@ -282,7 +255,7 @@ if  __name__ =='__main__':
         Weapon(1,0,0, True),
         Armour(2,3),
         Temporary(2,0,0,0),
-        Status(False, False, False, False))
+        Status(False, False, False))
     
     Combatants = [Alice, Bob, Claire]
     
@@ -324,6 +297,20 @@ if  __name__ =='__main__':
     ## To do
     # round
     print
+    print melee_lock(Claire, Alice)
+    for n in Bob.status.melee_lock:
+        print n.name    
+    print melee_lock(Alice, Bob)
+    print melee_lock(Bob, Alice)
+    print check_melee_lock(Bob, Alice)
+    print check_melee_lock(Alice, Bob)
+    for n in Bob.status.melee_lock:
+        print n.name 
+    print break_melee_lock(Bob)
+    for n in Bob.status.melee_lock:
+        print n.name 
+    print check_melee_lock(Bob, Alice)
+    print check_melee_lock(Alice, Bob)
     while (Claire.status.fallen == False) and (Claire.status.dead == False):
         AliceDice = Die().value + Die().value
         ClaireDice = Die().value
