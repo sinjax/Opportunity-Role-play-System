@@ -29,7 +29,6 @@ def test_combat():
 		Temporary(2,0,0,0),
 		Status(False, False, False))
 
-	Combatants = [Alice, Bob, Claire]
 
 	# Combat Turn:
 
@@ -57,12 +56,13 @@ def test_combat():
 	Claire.temporary.pool.append(ClaireSet.Dice[0])
 
 	# initiative
-	for combatant in Combatants:
+	for combatant in combat.combatants:
 		combatant.calculate_initiative()
+		print combatant.name
 		print combatant.temporary.initiative
 
 	combat.determine_initiative_order()
-	for combatant in Combatants:
+	for combatant in combat.combatants:
 		print combatant.name
 		print combatant.temporary.initiative
 		
