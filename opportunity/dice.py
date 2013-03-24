@@ -2,6 +2,7 @@ from random import randint, shuffle
 class Die:
 	""" A single die """
 	def __init__(self, colour = None, value = None):
+                self.colour = colour
 		if(value == None):
 			self.roll()
 			
@@ -13,11 +14,11 @@ class DiceSet:
 	Seizing Opportunity stage """
 	def __init__(self):
 		self.Dice = [Die("Attack"),
-					 Die("Attack"),
-					 Die("Defence"),
-					 Die("Defence"),
-					 Die("Maneuver"),
-					 Die("Maneuver")]
+				Die("Attack"),
+                                Die("Defence"),
+                                Die("Defence"),
+                                Die("Maneuver"),
+                                Die("Maneuver")]
 					 
 	def roll(self):
 		for die in self.Dice:

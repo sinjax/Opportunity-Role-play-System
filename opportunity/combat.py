@@ -45,21 +45,21 @@ class Combat(object):
 		return pick_order[:total_picks]
 
 	def determine_initiative_order(self):
-		""" Determine the a character's initiative based on their pool in the 
+		""" Determine a character's initiative based on their pool in the 
 		Initiative phase of the Seizing Opportunity stage """
 		shuffle(self.combatants) 
 		pick_key = attrgetter('temporary.initiative', 
-							  'temporary.position', 
-							  'temporary.trauma', 
-							  'attributes.agility', 
-							  'attributes.intelligence')
+					'temporary.position', 
+					'temporary.trauma', 
+                                        'attributes.agility', 
+					'attributes.intelligence')
 		self.combatants.sort(key = pick_key, reverse = True)
 
 	def attack(self,attacker, ATT, accuracy, target, DEF):
 		""" Make an attack in the Violence stage as the result of an active action.
 		ATT is the raw ATT value derived from the red dice used in the action
 		accuracy is the value of the highest red dice used in the action
-		DEF is the raw REF value derived from the green dice used in the action """ 
+		DEF is the raw DEF value derived from the green dice used in the action """ 
 		report = []
 		if accuracy <= target.armour.coverage:
 			armour_defence = \
@@ -73,11 +73,14 @@ class Combat(object):
 			report.append('%s\'s attack strikes an unarmoured area' % attacker.name)
 		
 		if (len(attacker.status.melee_lock) > 0):
-			ATT -= attacker.weapon.effective_range
-			report.append('%s is encumbered by their weapon' % attacker.name)
+			encumbered = attacker.weapon.effective_range
+			if encumbered > 0:
+                                ATT -= encumbered
+                                report.append('%s is encumbered by their weapon' % attacker.name)
 		elif attacker.status.aimed == True:
-			ATT += attacker.weapon.effective_range
-			report.append('%s\'s takes an aimed shot' % attacker.name)
+                        if target.temporary.position < attacker.temporary.position:
+                                ATT += attacker.weapon.effective_range
+                                report.append('%s\'s takes an aimed shot' % attacker.name)
 			
 		if ATT > DEF:
 			target.status.aimed = False
