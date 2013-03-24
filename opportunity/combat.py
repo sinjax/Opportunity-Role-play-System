@@ -144,6 +144,8 @@ class Combat(object):
 		return report
 		
 	def check_melee_lock(self,combatantA, combatantB):
-			""" Check if two self.combatants are in melee lock with each other """
-			return combatantA in combatantB.status.melee_lock
+		""" Check if two self.combatants are in melee lock with each other """
+		return combatantA in combatantB.status.melee_lock
+                        
+        
 
