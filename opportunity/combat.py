@@ -74,12 +74,12 @@ class Combat(object):
 		if (len(attacker.status.melee_lock) > 0):
 			encumbered = attacker.weapon.effective_range
 			if encumbered > 0:
-                                ATT -= encumbered
-                                report.append('%s is encumbered by their weapon' % attacker.name)
+				ATT -= encumbered
+				report.append('%s is encumbered by their weapon' % attacker.name)
 		elif attacker.status.aimed == True:
-                        if target.temporary.position < attacker.temporary.position:
-                                ATT += attacker.weapon.effective_range
-                                report.append('%s\'s takes an aimed shot' % attacker.name)
+			if target.temporary.position < attacker.temporary.position:
+				ATT += attacker.weapon.effective_range
+				report.append('%s\'s takes an aimed shot' % attacker.name)
 			
 		if ATT > DEF:
 			target.status.aimed = False
@@ -147,20 +147,20 @@ class Combat(object):
 		return combatantA in combatantB.status.melee_lock
                         
 	def melee_attack_check_prerequisites(self, attacker):
-	""" Check if the character meets the criteria to choose a melee attack """
-	prerequisites_met = False
-	if attacker.weapon.effective_range == 0:
-		for die in attacker.temporary.pool:
-			if die.colour == "Attack":
-				prerequisites_met = True
-				break
-	return prerequisites_met
+                """ Check if the character meets the criteria to choose a melee attack """
+                prerequisites_met = False
+                if attacker.weapon.effective_range == 0:
+                        for die in attacker.temporary.pool:
+                                if die.colour == "Attack":
+                                        prerequisites_met = True
+                                        break
+                return prerequisites_met
 		
         def melee_attack(self, attacker, red_die, target):
                 """ Set up a melee attack, to be completed once a response is chosen """
                 attacker.temporary.pool.remove(red_die)
                 response_allowed = True
-                action = lambda(DEF): self.attack(self, attacker, red_die.value, red_die.value, target, DEF)
+                action = lambda(DEF): self.attack(attacker, red_die.value, red_die.value, target, DEF)
                                                                          
                 report = ["%s goes to strike %s" % (attacker.name, target.name)]
                 return (response_allowed, action, report)
@@ -190,11 +190,11 @@ class Combat(object):
                 action = lambda: None
                 response_allowed = False
                 if attacker.temporary.position > target.temporary.position:
-                        melee_lock_report = melee_lock(attacker, target)
+                        melee_lock_report = self.melee_lock(attacker, target)
                         report.extend(melee_lock_report)
-                        if melee_attack_check_prerequisites(attacker):
+                        if self.melee_attack_check_prerequisites(attacker):
                                 response_allowed = True
-                                action = lambda(DEF): self.attack(self, attacker, red_die.value, red_die.value, target, DEF)
+                                action = lambda(DEF): self.attack(attacker, red_die.value, red_die.value, target, DEF)
                                 report.append("%s goes to strike %s" % (attacker.name, target.name))
                 else:
                         report.append("%s doesn't reach %s" % (attacker.name, target.name))
@@ -218,7 +218,7 @@ class Combat(object):
                 """ Set up a ranged attack, to be completed once a response is chosen """
                 attacker.temporary.pool.remove(red_die)
                 response_allowed = True
-                action = lambda(DEF): self.attack(self, attacker, red_die.value, red_die.value, target, DEF)
+                action = lambda(DEF): self.attack(attacker, red_die.value, red_die.value, target, DEF)
                 report = "%s goes fires upon %s" % (attacker.name, target.name)
                 return (response_allowed, action, report)
 
@@ -251,7 +251,7 @@ class Combat(object):
                                         break
                 return prerequisites_met
 
-        def block(defender, green_die, attacker, attack):
+        def block(self, defender, green_die, attacker, attack):
                 """ Block an attack and return the complete attack action """
                 defender.temporary.pool.remove(green_die)
                 response_allowed = False

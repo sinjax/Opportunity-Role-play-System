@@ -2,8 +2,6 @@ from opportunity.character import *
 from opportunity.dice import *
 from opportunity.combat import *
 
-from operator import attrgetter
-
 def test_combat():
 	Alice = Character(
 		"Alice",
